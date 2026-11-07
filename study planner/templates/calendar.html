@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Kalender & Pengingat{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header Navigasi Bulan -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Kalender Belajar & Deadline</span>
+            <h1 class="text-2xl font-bold text-slate-800">{{ month_name }} {{ year }}</h1>
+        </div>
+        <div class="flex items-center space-x-2">
+            <a href="{{ url_for('view_calendar', year=prev_year, month=prev_month) }}" class="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition flex items-center space-x-1 text-xs font-semibold">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">Bulan Lalu</span>
+            </a>
+            <a href="{{ url_for('view_calendar', year=today.year, month=today.month) }}" class="px-3 py-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-700 text-xs font-semibold">
+                Hari Ini
+            </a>
+            <a href="{{ url_for('view_calendar', year=next_year, month=next_month) }}" class="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition flex items-center space-x-1 text-xs font-semibold">
+                <span class="hidden sm:inline">Bulan Depan</span>
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Tampilan Kalender Bulanan -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+        <!-- Header Hari (Senin - Minggu) -->
+        <div class="grid grid-cols-7 border-b border-slate-200 bg-slate-50 text-center text-xs font-bold text-slate-600 py-3">
+            <div>Senin</div>
+            <div>Selasa</div>
+            <div>Rabu</div>
+            <div>Kamis</div>
+            <div>Jumat</div>
+            <div class="text-indigo-600">Sabtu</div>
+            <div class="text-rose-600">Minggu</div>
+        </div>
+
+        <!-- Grid Tanggal -->
+        <div class="grid grid-cols-7 divide-x divide-y divide-slate-100 min-h-[500px]">
+            {% for week in month_weeks %}
+                {% for d in week %}
+                    {% set d_str = d.strftime('%Y-%m-%d') %}
+                    {% set is_current_month = (d.month == month) %}
+                    {% set is_today = (d == today) %}
+                    {% set day_tasks = tasks_by_date.get(d_str, []) %}
+                    {% set day_name = get_indonesian_day_name(d) %}
+                    {% set day_schedules = schedules_by_day.get(day_name, []) %}
+
+                    <div class="p-2 sm:p-2.5 flex flex-col justify-between transition min-h-[110px] {{ 'bg-slate-50/50 opacity-40' if not is_current_month else 'bg-white' }} {{ 'ring-2 ring-indigo-500 ring-inset bg-indigo-50/20' if is_today else '' }}">
+                        <!-- Tanggal Angka & Label -->
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs font-bold {{ 'w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center' if is_today else 'text-slate-700' }}">
+                                {{ d.day }}
+                            </span>
+                            {% if day_tasks %}
+                                <span class="w-2 h-2 rounded-full bg-rose-500" title="{{ day_tasks|length }} Tugas"></span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Konten Tugas & Jadwal di Hari Ini -->
+                        <div class="space-y-1 flex-1 overflow-y-auto max-h-[85px]">
+                            <!-- Deadline Tugas -->
+                            {% for t in day_tasks %}
+                            <div class="text-[10px] p-1 rounded font-medium truncate flex items-center space-x-1 {{ 'bg-emerald-100 text-emerald-800 line-through' if t.status == 'Selesai' else 'bg-rose-100 text-rose-800 border-l-2 border-rose-500' }}" title="{{ t.title }} ({{ t.status }})">
+                                <i data-lucide="alert-circle" class="w-2.5 h-2.5 shrink-0"></i>
+                                <span class="truncate">{{ t.title }}</span>
+                            </div>
+                            {% endfor %}
+
+                            <!-- Jadwal Rutin Jam -->
+                            {% if is_current_month and day_schedules %}
+                            <div class="text-[9px] text-slate-500 bg-slate-100 px-1 py-0.5 rounded truncate" title="{% for s in day_schedules %}{{ s.start_time }}-{{ s.end_time }}: {{ s.subject }}; {% endfor %}">
+                                <span class="font-semibold">{{ day_schedules|length }} Jadwal Belajar</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Kotak Keterangan / Legenda & Pengingat -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-wrap items-center justify-between gap-4 text-xs text-slate-600">
+        <div class="flex flex-wrap items-center gap-4">
+            <span class="font-bold text-slate-800">Petunjuk & Status:</span>
+            <span class="inline-flex items-center"><span class="w-3 h-3 rounded-full bg-indigo-600 mr-1.5"></span> Hari Ini</span>
+            <span class="inline-flex items-center"><span class="w-3 h-3 rounded bg-rose-100 border border-rose-300 mr-1.5"></span> Deadline Belum Selesai</span>
+            <span class="inline-flex items-center"><span class="w-3 h-3 rounded bg-emerald-100 border border-emerald-300 mr-1.5"></span> Deadline Terselesaikan</span>
+            <span class="inline-flex items-center"><span class="w-3 h-3 rounded bg-slate-200 mr-1.5"></span> Jadwal Rutin Terdaftar</span>
+        </div>
+        <div>
+            <a href="{{ url_for('tasks') }}" class="text-indigo-600 font-semibold hover:underline">Kelola Semua Tugas &rarr;</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

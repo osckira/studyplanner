@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Study Planner{% endblock %} - Aplikasi Perencana Belajar</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            200: '#c7d2fe',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+    <!-- Navbar Header -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+                        <i data-lucide="book-marked" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <a href="{{ url_for('index') }}" class="text-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+                            Study Planner
+                        </a>
+                        <p class="text-xs text-slate-400">Jadwal, Tugas & Target Belajar</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Links -->
+                <div class="hidden md:flex space-x-2">
+                    <a href="{{ url_for('index') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 {{ 'bg-indigo-50 text-indigo-700' if request.endpoint == 'index' else 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                        <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="{{ url_for('schedules') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 {{ 'bg-indigo-50 text-indigo-700' if request.endpoint == 'schedules' else 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                        <i data-lucide="clock" class="w-4 h-4"></i>
+                        <span>Jadwal Harian & Jam</span>
+                    </a>
+                    <a href="{{ url_for('tasks') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 {{ 'bg-indigo-50 text-indigo-700' if request.endpoint == 'tasks' else 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                        <i data-lucide="check-square" class="w-4 h-4"></i>
+                        <span>Tugas & Deadline</span>
+                    </a>
+                    <a href="{{ url_for('view_calendar') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 {{ 'bg-indigo-50 text-indigo-700' if request.endpoint == 'view_calendar' else 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                        <i data-lucide="calendar" class="w-4 h-4"></i>
+                        <span>Kalender & Pengingat</span>
+                    </a>
+                </div>
+
+                <!-- Quick Action Buttons -->
+                <div class="flex items-center space-x-2">
+                    <button onclick="document.getElementById('modal-quick-log').classList.remove('hidden')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-medium py-2 px-3.5 rounded-lg shadow-sm transition flex items-center space-x-1.5">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Catat Sesi</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Navigation Menu -->
+        <div class="md:hidden flex overflow-x-auto px-4 py-2 space-x-1 border-t border-slate-100 bg-slate-50 text-xs">
+            <a href="{{ url_for('index') }}" class="px-2.5 py-1.5 rounded font-medium whitespace-nowrap {{ 'bg-indigo-600 text-white' if request.endpoint == 'index' else 'text-slate-600' }}">Dashboard</a>
+            <a href="{{ url_for('schedules') }}" class="px-2.5 py-1.5 rounded font-medium whitespace-nowrap {{ 'bg-indigo-600 text-white' if request.endpoint == 'schedules' else 'text-slate-600' }}">Jadwal Jam</a>
+            <a href="{{ url_for('tasks') }}" class="px-2.5 py-1.5 rounded font-medium whitespace-nowrap {{ 'bg-indigo-600 text-white' if request.endpoint == 'tasks' else 'text-slate-600' }}">Tugas</a>
+            <a href="{{ url_for('view_calendar') }}" class="px-2.5 py-1.5 rounded font-medium whitespace-nowrap {{ 'bg-indigo-600 text-white' if request.endpoint == 'view_calendar' else 'text-slate-600' }}">Kalender</a>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 w-full">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="p-4 mb-3 rounded-xl border flex items-center justify-between text-sm shadow-xs {{ 'bg-emerald-50 text-emerald-800 border-emerald-200' if category == 'success' else 'bg-amber-50 text-amber-800 border-amber-200' if category == 'warning' else 'bg-blue-50 text-blue-800 border-blue-200' }}">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="info" class="w-4 h-4"></i>
+                            <span>{{ message }}</span>
+                        </div>
+                        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Modal Catat Sesi Belajar (Quick Log) -->
+    <div id="modal-quick-log" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl relative animate-in fade-in zoom-in duration-200">
+            <button onclick="document.getElementById('modal-quick-log').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div class="flex items-center space-x-2 text-indigo-600 mb-4">
+                <i data-lucide="timer" class="w-6 h-6"></i>
+                <h3 class="text-lg font-bold text-slate-800">Catat Sesi Belajar Selesai</h3>
+            </div>
+            <form action="{{ url_for('add_log') }}" method="POST" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Mata Pelajaran / Topik</label>
+                    <input type="text" name="subject" required placeholder="Contoh: Pemrograman Python, Kalkulus" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Durasi (Menit)</label>
+                        <input type="number" name="duration_minutes" required min="5" step="5" value="60" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Tanggal</label>
+                        <input type="date" name="log_date" value="{{ today_str if today_str else '' }}" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Catatan Tambahan (Opsional)</label>
+                    <textarea name="notes" rows="2" placeholder="Apa saja yang telah dipahami hari ini..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="document.getElementById('modal-quick-log').classList.add('hidden')" class="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow-sm">Simpan Progress</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500 mt-auto">
+        <p>Study Planner &bull; Aplikasi Penyusun Jadwal, Tugas & Target Belajar Harian &copy; 2026</p>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
